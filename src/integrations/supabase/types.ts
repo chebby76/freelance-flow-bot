@@ -9,7 +9,105 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string | null
+          email: string | null
+          full_name: string | null
+          hourly_rate: number | null
+          id: string
+          location: string | null
+          skills: string[] | null
+          updated_at: string | null
+          user_type: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          hourly_rate?: number | null
+          id: string
+          location?: string | null
+          skills?: string[] | null
+          updated_at?: string | null
+          user_type: string
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          hourly_rate?: number | null
+          id?: string
+          location?: string | null
+          skills?: string[] | null
+          updated_at?: string | null
+          user_type?: string
+        }
+        Relationships: []
+      }
+      projects: {
+        Row: {
+          budget: number | null
+          client_id: string
+          created_at: string | null
+          deadline: string | null
+          description: string | null
+          freelancer_id: string | null
+          id: string
+          skills_required: string[] | null
+          status: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          budget?: number | null
+          client_id: string
+          created_at?: string | null
+          deadline?: string | null
+          description?: string | null
+          freelancer_id?: string | null
+          id?: string
+          skills_required?: string[] | null
+          status?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          budget?: number | null
+          client_id?: string
+          created_at?: string | null
+          deadline?: string | null
+          description?: string | null
+          freelancer_id?: string | null
+          id?: string
+          skills_required?: string[] | null
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_freelancer_id_fkey"
+            columns: ["freelancer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
