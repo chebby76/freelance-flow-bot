@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,7 +12,7 @@ interface Profile {
   id: string;
   email: string;
   full_name: string;
-  user_type: 'freelancer' | 'client';
+  user_type: string;
   avatar_url?: string;
   skills?: string[];
   hourly_rate?: number;
