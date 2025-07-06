@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -5,8 +6,12 @@ import { User, Session } from '@supabase/supabase-js';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Bot, LogOut, Plus, Users, Briefcase, DollarSign } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Bot, LogOut, Plus, Users, Briefcase, DollarSign, MessageCircle, Bell } from 'lucide-react';
 import { toast } from 'sonner';
+import NotificationCenter from '@/components/NotificationCenter';
+import MessageCenter from '@/components/MessageCenter';
+import PaymentForm from '@/components/PaymentForm';
 
 interface Profile {
   id: string;
@@ -38,6 +43,7 @@ const Dashboard = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [applications, setApplications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -55,6 +61,7 @@ const Dashboard = () => {
           setTimeout(() => {
             fetchProfile(session.user.id);
             fetchProjects();
+            fetchApplications();
           }, 0);
         }
       }
@@ -70,6 +77,7 @@ const Dashboard = () => {
       } else {
         fetchProfile(session.user.id);
         fetchProjects();
+        fetchApplications();
       }
       setLoading(false);
     });
@@ -109,6 +117,29 @@ const Dashboard = () => {
       }
     } catch (error) {
       console.error('Error fetching projects:', error);
+    }
+  };
+
+  const fetchApplications = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('applications')
+        .select(`
+          *,
+          projects (title, budget),
+          profiles!applications_freelancer_id_fkey (full_name)
+        `)
+        .or(`freelancer_id.eq.${user.id},project_id.in.(${projects.filter(p => p.client_id === user.id).map(p => p.id).join(',') || 'null'})`);
+
+      if (error) {
+        console.error('Error fetching applications:', error);
+      } else {
+        setApplications(data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching applications:', error);
     }
   };
 
@@ -154,6 +185,9 @@ const Dashboard = () => {
               </span>
             </div>
             <div className="flex items-center space-x-4">
+              <Button variant="outline" onClick={() => navigate('/projects')}>
+                Browse Projects
+              </Button>
               <span className="text-sm text-gray-600">
                 Welcome, {profile.full_name}
               </span>
@@ -204,76 +238,127 @@ const Dashboard = () => {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {profile.user_type === 'freelancer' ? 'Hourly Rate' : 'Total Budget'}
-              </CardTitle>
+              <CardTitle className="text-sm font-medium">Applications</CardTitle>
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                ${profile.hourly_rate || 0}
-                {profile.user_type === 'freelancer' && '/hr'}
-              </div>
+              <div className="text-2xl font-bold">{applications.length}</div>
             </CardContent>
           </Card>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                {profile.user_type === 'freelancer' ? 'Available Projects' : 'My Posted Projects'}
-                <Button size="sm">
-                  <Plus className="h-4 w-4 mr-2" />
-                  {profile.user_type === 'freelancer' ? 'Browse All' : 'Post Project'}
-                </Button>
-              </CardTitle>
-              <CardDescription>
-                {profile.user_type === 'freelancer' 
-                  ? 'Find projects that match your skills' 
-                  : 'Manage your posted projects'}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {openProjects.slice(0, 3).map((project) => (
-                <div key={project.id} className="p-4 border rounded-lg">
-                  <h4 className="font-semibold">{project.title}</h4>
-                  <p className="text-sm text-gray-600 mt-1">{project.description}</p>
-                  <div className="flex justify-between items-center mt-3">
-                    <Badge variant="outline">{project.status}</Badge>
-                    <span className="text-sm font-medium">${project.budget}</span>
+        <Tabs defaultValue="projects" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="projects">Projects</TabsTrigger>
+            <TabsTrigger value="messages">
+              <MessageCircle className="h-4 w-4 mr-2" />
+              Messages
+            </TabsTrigger>
+            <TabsTrigger value="notifications">
+              <Bell className="h-4 w-4 mr-2" />
+              Notifications
+            </TabsTrigger>
+            <TabsTrigger value="payments">Payments</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="projects" className="space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    {profile.user_type === 'freelancer' ? 'Available Projects' : 'My Posted Projects'}
+                    <Button size="sm" onClick={() => navigate('/projects')}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      {profile.user_type === 'freelancer' ? 'Browse All' : 'Post Project'}
+                    </Button>
+                  </CardTitle>
+                  <CardDescription>
+                    {profile.user_type === 'freelancer' 
+                      ? 'Find projects that match your skills' 
+                      : 'Manage your posted projects'}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {openProjects.slice(0, 3).map((project) => (
+                    <div key={project.id} className="p-4 border rounded-lg">
+                      <h4 className="font-semibold">{project.title}</h4>
+                      <p className="text-sm text-gray-600 mt-1">{project.description}</p>
+                      <div className="flex justify-between items-center mt-3">
+                        <Badge variant="outline">{project.status}</Badge>
+                        <span className="text-sm font-medium">${project.budget}</span>
+                      </div>
+                    </div>
+                  ))}
+                  {openProjects.length === 0 && (
+                    <p className="text-center text-gray-500 py-8">
+                      No projects available at the moment
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Recent Applications</CardTitle>
+                  <CardDescription>Your latest project applications</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {applications.slice(0, 3).map((app) => (
+                      <div key={app.id} className="p-4 bg-blue-50 rounded-lg">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h4 className="font-medium">{app.projects?.title}</h4>
+                            <p className="text-sm text-gray-600">
+                              {profile.user_type === 'client' ? 
+                                `Application from ${app.profiles?.full_name}` : 
+                                `Your application - $${app.proposed_rate}`}
+                            </p>
+                          </div>
+                          <Badge variant={
+                            app.status === 'pending' ? 'secondary' : 
+                            app.status === 'accepted' ? 'default' : 'destructive'
+                          }>
+                            {app.status}
+                          </Badge>
+                        </div>
+                      </div>
+                    ))}
+                    {applications.length === 0 && (
+                      <p className="text-center text-gray-500 py-8">
+                        No applications yet
+                      </p>
+                    )}
                   </div>
-                </div>
-              ))}
-              {openProjects.length === 0 && (
-                <p className="text-center text-gray-500 py-8">
-                  No projects available at the moment
-                </p>
-              )}
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Activity</CardTitle>
-              <CardDescription>Your latest updates and notifications</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="p-4 bg-blue-50 rounded-lg">
-                  <p className="text-sm">
-                    🎉 Welcome to FreelanceBot! Complete your profile to get started.
-                  </p>
+          <TabsContent value="messages">
+            <NotificationCenter />
+          </TabsContent>
+
+          <TabsContent value="notifications">
+            <NotificationCenter />
+          </TabsContent>
+
+          <TabsContent value="payments">
+            <Card>
+              <CardHeader>
+                <CardTitle>Payment Center</CardTitle>
+                <CardDescription>Manage your payments and invoices</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8">
+                  <DollarSign className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500">Payment integration ready</p>
+                  <p className="text-sm text-gray-400">Process payments securely with Stripe</p>
                 </div>
-                <div className="p-4 bg-green-50 rounded-lg">
-                  <p className="text-sm">
-                    ✅ Your account has been successfully created and verified.
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );
