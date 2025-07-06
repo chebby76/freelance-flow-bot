@@ -1,8 +1,11 @@
 
 import { ArrowRight, Play, Users, Zap, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 
 const Hero = () => {
+  const navigate = useNavigate();
+
   return (
     <section className="relative overflow-hidden bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
@@ -27,11 +30,20 @@ const Hero = () => {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-lg px-8 py-4">
+              <Button 
+                size="lg" 
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-lg px-8 py-4"
+                onClick={() => navigate('/auth')}
+              >
                 Start as Freelancer
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
-              <Button size="lg" variant="outline" className="text-lg px-8 py-4 border-2">
+              <Button 
+                size="lg" 
+                variant="outline" 
+                className="text-lg px-8 py-4 border-2"
+                onClick={() => navigate('/auth')}
+              >
                 <Play className="mr-2 h-5 w-5" />
                 Hire Talent
               </Button>
